@@ -12,6 +12,7 @@ import { auth } from "./config/auth.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import { notFoundHandler } from "./middlewares/not-found.middleware.js";
 import serviceRoutes from "./routes/service.routes.js";
+import bookingRoutes from "./routes/booking.routes.js";
 
 dotenv.config();
 
@@ -54,6 +55,8 @@ app.get("/api/health", (_req, res) => {
 
 // Service API routes
 app.use("/api/services", serviceRoutes);
+
+app.use("/api/bookings", bookingRoutes);
 
 // 404 and error handlers must remain last
 app.use(notFoundHandler);
