@@ -1,36 +1,26 @@
+import "dotenv/config";
+import { MongoClient } from "mongodb";
 
-import { MongoClient, Db } from "mongodb";
+const MONGODB_URI = process.env.MONGODB_URI;
 
-let database: Db;
+if (!MONGODB_URI) {
+  throw new Error("MONGODB_URI is missing from environment variables");
+}
+
+export const mongoClient = new MongoClient(MONGODB_URI);
+export const database = mongoClient.db("wedplan");
 
 export const connectDB = async (): Promise<void> => {
-  const MONGODB_URI = process.env.MONGODB_URI;
-
-  if (!MONGODB_URI) {
-    throw new Error("MONGODB_URI is missing from environment variables");
-  }
-
-  const client = new MongoClient(MONGODB_URI);
-
   try {
-    await client.connect();
-
-    database = client.db("wedplan");
-
+    await mongoClient.connect();
     await database.command({ ping: 1 });
 
     console.log("MongoDB connected successfully!");
     console.log("Database: wedplan");
   } catch (error) {
     console.error("MongoDB connection failed:", error);
-    process.exit(1);
+    throw error;
   }
 };
 
-export const getDB = (): Db => {
-  if (!database) {
-    throw new Error("Database is not connected yet");
-  }
-
-  return database;
-};
+export const getDB = () => database;
