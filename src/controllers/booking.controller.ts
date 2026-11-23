@@ -22,14 +22,14 @@ const validId = (id: string) => ObjectId.isValid(id);
 export const createBooking: RequestHandler = async (req, res, next) => {
   try {
     const user = getUser(res);
-
     const { serviceId, eventDate, eventLocation, message } = req.body;
 
     if (
       typeof serviceId !== "string" ||
       !validId(serviceId) ||
       !eventDate ||
-      !eventLocation?.trim()
+      typeof eventLocation !== "string" ||
+      !eventLocation.trim()
     ) {
       res.status(400).json({
         success: false,
@@ -91,7 +91,7 @@ export const createBooking: RequestHandler = async (req, res, next) => {
       vendorId: String(service.vendorId),
       customerId: user.id,
       eventDate: parsedDate,
-      eventLocation: String(eventLocation).trim(),
+      eventLocation: eventLocation.trim(),
       message: typeof message === "string" ? message.trim() : "",
       status: "pending",
       createdAt: new Date(),
@@ -102,22 +102,42 @@ export const createBooking: RequestHandler = async (req, res, next) => {
     res.status(201).json({
       success: true,
       message: "Booking request submitted successfully",
-      data: { _id: result.insertedId, ...booking },
+      data: {
+        _id: result.insertedId,
+        ...booking,
+        service,
+      },
     });
   } catch (error) {
     next(error);
   }
 };
 
-// Customer: view own bookings
+// Customer: view own bookings with service information
 export const getMyBookings: RequestHandler = async (req, res, next) => {
   try {
     const user = getUser(res);
 
     const bookings = await getDB()
       .collection("bookings")
-      .find({ customerId: user.id })
-      .sort({ createdAt: -1 })
+      .aggregate([
+        { $match: { customerId: user.id } },
+        { $sort: { createdAt: -1 } },
+        {
+          $lookup: {
+            from: "services",
+            localField: "serviceId",
+            foreignField: "_id",
+            as: "service",
+          },
+        },
+        {
+          $unwind: {
+            path: "$service",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+      ])
       .toArray();
 
     res.status(200).json({
@@ -129,15 +149,31 @@ export const getMyBookings: RequestHandler = async (req, res, next) => {
   }
 };
 
-// Vendor: view booking requests
+// Vendor: view booking requests with service information
 export const getVendorBookings: RequestHandler = async (req, res, next) => {
   try {
     const user = getUser(res);
 
     const bookings = await getDB()
       .collection("bookings")
-      .find({ vendorId: user.id })
-      .sort({ createdAt: -1 })
+      .aggregate([
+        { $match: { vendorId: user.id } },
+        { $sort: { createdAt: -1 } },
+        {
+          $lookup: {
+            from: "services",
+            localField: "serviceId",
+            foreignField: "_id",
+            as: "service",
+          },
+        },
+        {
+          $unwind: {
+            path: "$service",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+      ])
       .toArray();
 
     res.status(200).json({
