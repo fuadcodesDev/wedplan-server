@@ -14,6 +14,7 @@ import { notFoundHandler } from "./middlewares/not-found.middleware.js";
 import serviceRoutes from "./routes/service.routes.js";
 import bookingRoutes from "./routes/booking.routes.js";
 import adminUserRoutes from "./routes/admin-user.routes.js";
+import adminTransactionRoutes from "./routes/admin-transaction.routes.js";
 
 dotenv.config();
 
@@ -60,6 +61,8 @@ app.use("/api/services", serviceRoutes);
 app.use("/api/bookings", bookingRoutes);
 
 app.use("/api/admin/users", adminUserRoutes);
+
+app.use("/api/admin/transactions", adminTransactionRoutes);
 // 404 and error handlers must remain last
 app.use(notFoundHandler);
 app.use(errorHandler);
