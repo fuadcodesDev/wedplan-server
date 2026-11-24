@@ -1,7 +1,9 @@
+
 import { Router } from "express";
 import {
   createService,
   deleteService,
+  getAdminServices,
   getMyServices,
   getServiceById,
   getServices,
@@ -12,9 +14,20 @@ import { requireAuth, requireRole } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
-// Public routes
-router.get("/", getServices);
-router.get("/:id", getServiceById);
+// Admin routes
+router.get(
+  "/admin/all",
+  requireAuth,
+  requireRole("admin"),
+  getAdminServices
+);
+
+router.patch(
+  "/:id/review",
+  requireAuth,
+  requireRole("admin"),
+  reviewService
+);
 
 // Vendor routes
 router.get("/vendor/mine", requireAuth, requireRole("vendor"), getMyServices);
@@ -22,12 +35,8 @@ router.post("/", requireAuth, requireRole("vendor"), createService);
 router.patch("/:id", requireAuth, requireRole("vendor"), updateService);
 router.delete("/:id", requireAuth, requireRole("vendor"), deleteService);
 
-// Admin route
-router.patch(
-  "/:id/review",
-  requireAuth,
-  requireRole("admin"),
-  reviewService
-);
+// Public routes
+router.get("/", getServices);
+router.get("/:id", getServiceById);
 
 export default router;

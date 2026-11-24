@@ -458,3 +458,54 @@ export const getMyServices: RequestHandler = async (_req, res, next) => {
     next(error);
   }
 };
+
+// ADMIN: List all vendor service submissions
+export const getAdminServices: RequestHandler = async (req, res, next) => {
+  try {
+    const { status, page = "1", limit = "12" } = req.query;
+
+    const filter: Record<string, unknown> = {};
+
+    if (
+      typeof status === "string" &&
+      ["pending", "approved", "rejected"].includes(status)
+    ) {
+      filter.status = status;
+    } else if (status !== undefined && status !== "all") {
+      res.status(400).json({
+        success: false,
+        message: "Invalid service status filter",
+      });
+      return;
+    }
+
+    const pageNumber = Math.max(1, Number(page) || 1);
+    const pageSize = Math.min(50, Math.max(1, Number(limit) || 12));
+
+    const [data, total] = await Promise.all([
+      services()
+        .find(filter)
+        .sort({ createdAt: -1 })
+        .skip((pageNumber - 1) * pageSize)
+        .limit(pageSize)
+        .toArray(),
+
+      services().countDocuments(filter),
+    ]);
+
+    res.json({
+      success: true,
+      message: "Admin services retrieved successfully",
+      data,
+      pagination: {
+        page: pageNumber,
+        limit: pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
